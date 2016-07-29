@@ -1,0 +1,304 @@
+
+module Seed 
+{
+	double diameter;
+	double 	age;
+		
+	boolean shouldInit()
+	{
+		if(age > 1)
+		{
+			return true;
+		} else
+		{
+			return false;
+		}
+	}	
+}
+==> Sphere(diameter).(setShader(YELLOW))
+;
+
+
+module Roots
+{
+	double depth;
+	double radius;
+	double age;
+	
+	void initiate(){
+	
+		age = 0;
+		depth = 0.05;
+		radius = 0.05;
+	
+	}
+	
+	void getDepth(){
+	
+		depth = Math.min(age * 0.1,0.5);
+		radius = Math.min(age * 0.1,0.5);
+		
+	}
+	
+}
+//==> Translate(0,0,-depth) Box(depth,radius,radius).(setShader(WHITE))
+;
+
+module Apex 
+{
+		
+	double diameter;
+	int   	rank;
+	int		order;
+	double 	age;
+	
+	boolean shouldInit()
+	{
+		if(age > 1)
+		{
+			return true;
+		} else
+		{
+			return false;
+		}
+	}
+	
+	void initiate(){
+		
+		rank	= 1;
+		age		= 0;
+		order	= 0;
+		diameter = 0.015;
+		
+	}
+	
+	void initiateAxillary(Apex a){
+		
+		rank	= 1;
+		age		= 0;
+		order	= a.order+1;
+		diameter = 0.01;
+	}
+	
+}
+==> Sphere(diameter).(setShader(RED))
+;
+
+module Internode
+{
+	double age;
+	int rank;
+	int order;
+	double length;
+	double diameter;
+	
+	void initiate(Apex a){
+		
+		age = 0;
+		rank = a.rank;
+		order = a.order;
+		length = 0;
+		diameter = 0;
+		
+	}
+	
+	
+	
+	double Growth()
+	{
+		double am 	= 30;
+		double lm 	= 0.5;
+		double k	= 0.25;
+		
+		return lm / (1 + Math.exp(-k*(age-am))); 
+	}
+	
+	
+}
+==> Cylinder(length,diameter).(setShader(YELLOW))
+;
+
+
+module NodeInt
+{
+	double diameter;
+	int   	rank;
+	int		order;
+	double 	age;
+	double length = 0.01;
+	
+	void initiate(Apex a){
+		
+		diameter = a.diameter;
+		rank = a.rank;
+		order = a.order;
+		age = 0;
+		
+	}
+	
+	void getDiameter(Internode i){
+		
+		diameter = i.diameter;
+	}
+}
+==> Cylinder(length,diameter).(setShader(YELLOW))
+;
+
+module Leaf
+
+{
+	int age;
+	int rank;
+	int w_ratio = 2;
+	int order;
+	double lm;
+	
+	double length;
+	double width;
+	double height;
+	double petlength;
+	double petdiameter;
+	double leafangle;
+	
+	void initiate(Apex a){
+	
+		age = 0;
+		rank = a.rank;
+		order = a.order;
+		petdiameter = a.diameter;
+		
+	}
+	
+	double getFinalLength()
+	{
+		double mfl	= 1.;
+		double b	= 10.;
+		double rm	= 7.;
+		
+		//return mfl / (1+ ((rank-rm)/b)**2); 
+		return 0.75;
+	}
+	
+	double Growth()
+	{
+		double am 	= 10;
+		//double lm 	= 0.75;
+		
+		double k	= 0.25;
+		
+		return lm / (1 + Math.exp(-k*(age-am))); 
+	}
+	
+	void pet(){
+		
+		Internode it = selectWhere((*i:Internode*), i.rank == rank);		
+		petdiameter = (it[diameter])*2 +0.01;
+		if(rank <5){ petlength = 0.1 * rank;}
+		else{ petlength = 0.6;}
+		
+		double k_angle	= 0.25;
+		double am_angle	= 10;
+		double max_angle = 60;
+		leafangle  = max_angle / (1 + Math.exp(-k_angle*(age-am_angle))); 
+			
+	}
+	
+}
+==> Cylinder(petlength, (petdiameter/2)+0.01).(setShader(GREEN)) RL(leafangle) Box(length, width, height).(setShader(GREEN))
+;
+
+
+protected void init()
+[
+	Axiom ==> 	
+	
+	s:Seed
+	{
+		s.diameter	= 0.01;
+		s.age 		= 0.0;
+	};
+]
+
+
+
+
+public void run()
+{	
+[
+	// Seed Germination
+	s:Seed, (s.shouldInit()) ==> r:Roots a:Apex {r.initiate(); a.initiate();};
+	
+	// Produce vegetative phytometer
+	a:Apex, (a.shouldInit() && a.order ==0)
+	==>  n:NodeInt [b:Apex] [RH(180) l:Leaf] i:Internode RH(180) a
+	{
+		n.initiate(a);
+			b.initiateAxillary(a);
+			l.initiate(a);
+		i.initiate(a);
+		
+		
+		/*
+		i[length] = 0.;
+		i[radius] = 0.05;
+		n[radius] = 0.075;
+		l[length] = 0.;
+		l[width]  = 0.;
+		l[height] = 0.01;
+		l.petlength = 0.2;
+		l.petdiameter = 0.1;
+		*/
+		
+		a.age		= 0;
+		l.rank = a.rank;
+		i.rank = a.rank;
+		l.lm = l.getFinalLength();
+		a.rank++;
+		
+		
+	};
+	
+	s:Seed ::>
+	{
+		s.age++;
+	}
+	
+	r:Roots ::>
+	{
+		r.getDepth();
+		r.age++;
+	}
+	
+	// adding/changing attributes to created objetcs
+	a:Apex ::> 
+	{
+		a.age++;		
+	}
+	
+	i:Internode ::> 
+	{
+		i.age++;
+		if (i.rank > 5) {		
+		i[length] = i.Growth();
+		}
+		
+	}
+	
+	l:Leaf ::> 
+	{
+		l.age++;
+		l[length] = l.Growth();
+		l[width]  = l[length] / l[w_ratio];
+		l.pet();
+	}
+	
+	l:Leaf, (l.age > 50) ==>> ; 
+
+]
+
+ 
+ 
+ 	 
+
+
+}

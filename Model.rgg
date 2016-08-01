@@ -1,5 +1,21 @@
 
-module Seed 
+abstract module Organ(super.length) extends M(length)
+{	
+	int rank;				// phytomer rank
+	int cpn;				// cumulative phytomer number
+	int order;				// order (0 = main stem)
+	double age;				// organ age (dd)	
+	
+	
+	// calculate age for EACH organ
+	void calcAge() 
+	{	
+			age++;
+	}	
+}
+
+
+module Seed extends Null
 {
 	double diameter;
 	double 	age;
@@ -19,17 +35,17 @@ module Seed
 ;
 
 
-module Roots
+module Roots extends Organ
 {
 	double depth;
-	double radius;
-	double age;
+	double radius;	
 	
 	void initiate(){
 	
 		age = 0;
 		depth = 0.05;
 		radius = 0.05;
+		length = 0;
 	
 	}
 	
@@ -44,17 +60,14 @@ module Roots
 //==> Translate(0,0,-depth) Box(depth,radius,radius).(setShader(WHITE))
 ;
 
-module Apex 
-{
-		
-	double diameter;
-	int   	rank;
-	int		order;
-	double 	age;
+module Apex extends Organ
+{		
+	double diameter;	
+	double plas = 1;
 	
-	boolean shouldInit()
+	boolean shouldProduce()
 	{
-		if(age > 1)
+		if(age > (rank * plas))
 		{
 			return true;
 		} else
@@ -63,9 +76,12 @@ module Apex
 		}
 	}
 	
+	void increment(){
+	rank = rank +1;
+	}
+	
 	void initiate(){
-		
-		rank	= 1;
+				
 		age		= 0;
 		order	= 0;
 		diameter = 0.015;
@@ -74,23 +90,24 @@ module Apex
 	
 	void initiateAxillary(Apex a){
 		
-		rank	= 1;
+		rank	= a.rank;
 		age		= 0;
 		order	= a.order+1;
 		diameter = 0.01;
+		
 	}
 	
 }
 ==> Sphere(diameter).(setShader(RED))
 ;
 
-module Internode
+module Internode extends Organ//extends Cylinder.(setShader(YELLOW))
 {
-	double age;
-	int rank;
-	int order;
-	double length;
-	double diameter;
+	
+	double diam;
+	double am 	= 30;
+	double lm 	= 0.15;
+	double k	= 0.25;
 	
 	void initiate(Apex a){
 		
@@ -98,34 +115,25 @@ module Internode
 		rank = a.rank;
 		order = a.order;
 		length = 0;
-		diameter = 0;
+		diam = a.diameter;
 		
-	}
+	}	
 	
-	
-	
-	double Growth()
-	{
-		double am 	= 30;
-		double lm 	= 0.5;
-		double k	= 0.25;
+	void Growth(){
 		
-		return lm / (1 + Math.exp(-k*(age-am))); 
+		
+		length = lm / (1 + Math.exp(-k*(age-am))); 
 	}
 	
 	
 }
-==> Cylinder(length,diameter).(setShader(YELLOW))
+==> Cylinder(length,diam).(setShader(YELLOW))
 ;
 
 
-module NodeInt
+module NodeInt extends Organ
 {
 	double diameter;
-	int   	rank;
-	int		order;
-	double 	age;
-	double length = 0.01;
 	
 	void initiate(Apex a){
 		
@@ -133,29 +141,26 @@ module NodeInt
 		rank = a.rank;
 		order = a.order;
 		age = 0;
+		length = 0.01;
 		
 	}
 	
 	void getDiameter(Internode i){
 		
-		diameter = i.diameter;
+		diameter = i.diam;
 	}
 }
-==> Cylinder(length,diameter).(setShader(YELLOW))
+==> Cylinder(length,diameter).(setShader(BLACK))
 ;
 
-module Leaf
-
+module Leaf extends Organ
 {
-	int age;
-	int rank;
-	int w_ratio = 2;
-	int order;
-	double lm;
 	
-	double length;
+	int w_ratio = 2;
+	double lm = 0.5;
+	double blade_len;
 	double width;
-	double height;
+	double thickness;
 	double petlength;
 	double petdiameter;
 	double leafangle;
@@ -165,46 +170,38 @@ module Leaf
 		age = 0;
 		rank = a.rank;
 		order = a.order;
-		petdiameter = a.diameter;
+		thickness = 0.001;
+		length = 0;
+		width = 0;
+		
+		petdiameter = a.diameter + thickness * 2;
+		
 		
 	}
 	
-	double getFinalLength()
-	{
-		double mfl	= 1.;
-		double b	= 10.;
-		double rm	= 7.;
-		
-		//return mfl / (1+ ((rank-rm)/b)**2); 
-		return 0.75;
-	}
-	
-	double Growth()
+	void Growth()
 	{
 		double am 	= 10;
-		//double lm 	= 0.75;
-		
 		double k	= 0.25;
 		
-		return lm / (1 + Math.exp(-k*(age-am))); 
-	}
-	
-	void pet(){
+		length = lm / (1 + Math.exp(-k*(age-am)));
+		blade_len = length;
+		
+		width = length / w_ratio;
 		
 		Internode it = selectWhere((*i:Internode*), i.rank == rank);		
-		petdiameter = (it[diameter])*2 +0.01;
-		if(rank <5){ petlength = 0.1 * rank;}
-		else{ petlength = 0.6;}
+		petdiameter = (it.diam) +0.002;		
+		petlength = it.lm  * 1.1;
 		
 		double k_angle	= 0.25;
 		double am_angle	= 10;
 		double max_angle = 60;
 		leafangle  = max_angle / (1 + Math.exp(-k_angle*(age-am_angle))); 
-			
-	}
+		
+	}		
 	
 }
-==> Cylinder(petlength, (petdiameter/2)+0.01).(setShader(GREEN)) RL(leafangle) Box(length, width, height).(setShader(GREEN))
+==> Cylinder(petlength, (petdiameter/2)+0.01).(setShader(GREEN)) RL(leafangle) Box(blade_len, width, thickness).(setShader(GREEN))
 ;
 
 
@@ -214,7 +211,7 @@ protected void init()
 	
 	s:Seed
 	{
-		s.diameter	= 0.01;
+		s.diameter	= 0.005;
 		s.age 		= 0.0;
 	};
 ]
@@ -226,35 +223,22 @@ public void run()
 {	
 [
 	// Seed Germination
-	s:Seed, (s.shouldInit()) ==> r:Roots a:Apex {r.initiate(); a.initiate();};
+	s:Seed, (s.shouldInit()) 
+	==> r:Roots a:Apex 
+	{
+		r.initiate(); 
+		a.initiate();
+	};
 	
 	// Produce vegetative phytometer
-	a:Apex, (a.shouldInit() && a.order ==0)
-	==>  n:NodeInt [b:Apex] [RH(180) l:Leaf] i:Internode RH(180) a
+	a:Apex, (a.shouldProduce() == true && a.order ==0)
+	==>  n:NodeInt [RL(90) b:Apex] [RH(180) l:Leaf] i:Internode RH(180) a
 	{
 		n.initiate(a);
 			b.initiateAxillary(a);
 			l.initiate(a);
 		i.initiate(a);
-		
-		
-		/*
-		i[length] = 0.;
-		i[radius] = 0.05;
-		n[radius] = 0.075;
-		l[length] = 0.;
-		l[width]  = 0.;
-		l[height] = 0.01;
-		l.petlength = 0.2;
-		l.petdiameter = 0.1;
-		*/
-		
-		a.age		= 0;
-		l.rank = a.rank;
-		i.rank = a.rank;
-		l.lm = l.getFinalLength();
-		a.rank++;
-		
+		a.increment();		
 		
 	};
 	
@@ -277,22 +261,19 @@ public void run()
 	
 	i:Internode ::> 
 	{
-		i.age++;
-		if (i.rank > 5) {		
-		i[length] = i.Growth();
-		}
+		i.age++;		
+		i.Growth();	
 		
 	}
 	
 	l:Leaf ::> 
 	{
 		l.age++;
-		l[length] = l.Growth();
-		l[width]  = l[length] / l[w_ratio];
-		l.pet();
+		l.Growth();	
+		
 	}
 	
-	l:Leaf, (l.age > 50) ==>> ; 
+	l:Leaf, (l.age > 20) ==>> ; 
 
 ]
 

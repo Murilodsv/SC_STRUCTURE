@@ -43,27 +43,32 @@ module Roots extends Organ
 	void initiate(){
 	
 		age = 0;
-		depth = 0.05;
-		radius = 0.05;
+		depth = 0;
+		radius = 0;
 		length = 0;
 	
 	}
 	
 	void getDepth(){
-	
-		depth = Math.min(age * 0.1,0.5);
-		radius = Math.min(age * 0.1,0.5);
+		double dm = 1.;
+		double rm = 0.5;
+		double am = 10;
+		double k = 0.5;
+		
+		depth = dm / (1 + Math.exp(-k*(age-am)));
+		radius = rm / (1 + Math.exp(-k*(age-am)));		
 		
 	}
 	
 }
-//==> Translate(0,0,-depth) Box(depth,radius,radius).(setShader(WHITE))
+==>  Rotate(180,0,0) Cone(depth,radius).(setShader(WHITE))
 ;
 
 module Apex extends Organ
 {		
 	double diameter;	
 	double plas = 1;
+	double translation;
 	
 	boolean shouldProduce()
 	{
@@ -89,25 +94,32 @@ module Apex extends Organ
 	}
 	
 	void initiateAxillary(Apex a){
-		
+			
 		rank	= a.rank;
 		age		= 0;
 		order	= a.order+1;
-		diameter = 0.01;
+		diameter = 0.005;
 		
 	}
 	
+	void UpdatePos(){
+		if(order>0){
+		Internode it = selectWhere((*i:Internode*), i.rank == rank);
+		translation = it.diam/2;
+		}
+	}
+	
 }
-==> Sphere(diameter).(setShader(RED))
+==> if(order > 0) (Translate(0,-0.005,translation)) Sphere(diameter/2).(setShader(RED))
 ;
 
 module Internode extends Organ//extends Cylinder.(setShader(YELLOW))
 {
 	
 	double diam;
-	double am 	= 30;
+	double am 	= 7;
 	double lm 	= 0.15;
-	double k	= 0.25;
+	double k	= 1.0;
 	
 	void initiate(Apex a){
 		
@@ -119,21 +131,24 @@ module Internode extends Organ//extends Cylinder.(setShader(YELLOW))
 		
 	}	
 	
-	void Growth(){
+	void Growth(){		
 		
-		
-		length = lm / (1 + Math.exp(-k*(age-am))); 
+		length = lm / (1 + Math.exp(-k*(age-am)));
+		diam = (lm/3) / (1 + Math.exp(-k*(age-am)));
 	}
 	
 	
 }
-==> Cylinder(length,diam).(setShader(YELLOW))
+==> Cylinder(length,diam/2).(setShader(YELLOW))
 ;
 
 
 module NodeInt extends Organ
 {
 	double diameter;
+	double am 	= 7;
+	double lm 	= 0.01;
+	double k	= 1.0;
 	
 	void initiate(Apex a){
 		
@@ -141,23 +156,25 @@ module NodeInt extends Organ
 		rank = a.rank;
 		order = a.order;
 		age = 0;
-		length = 0.01;
+		length = 0;
 		
 	}
 	
-	void getDiameter(Internode i){
+	void getDiameter(){
+		Internode it = selectWhere((*i:Internode*), i.rank == rank);
+		diameter = it.diam;
+		length = lm / (1 + Math.exp(-k*(age-am)));
 		
-		diameter = i.diam;
 	}
 }
-==> Cylinder(length,diameter).(setShader(BLACK))
+==> Cylinder(length,diameter/2).(setShader(BLACK))
 ;
 
 module Leaf extends Organ
 {
 	
-	int w_ratio = 2;
-	double lm = 0.5;
+	int w_ratio = 25;
+	double lm = 1.5;
 	double blade_len;
 	double width;
 	double thickness;
@@ -170,7 +187,7 @@ module Leaf extends Organ
 		age = 0;
 		rank = a.rank;
 		order = a.order;
-		thickness = 0.001;
+		thickness = 0.002;
 		length = 0;
 		width = 0;
 		
@@ -181,8 +198,8 @@ module Leaf extends Organ
 	
 	void Growth()
 	{
-		double am 	= 10;
-		double k	= 0.25;
+		double am 	= 5;
+		double k	= 0.5;
 		
 		length = lm / (1 + Math.exp(-k*(age-am)));
 		blade_len = length;
@@ -193,15 +210,15 @@ module Leaf extends Organ
 		petdiameter = (it.diam) +0.002;		
 		petlength = it.lm  * 1.1;
 		
-		double k_angle	= 0.25;
-		double am_angle	= 10;
+		double k_angle	= 1;
+		double am_angle	= 6;
 		double max_angle = 60;
 		leafangle  = max_angle / (1 + Math.exp(-k_angle*(age-am_angle))); 
 		
 	}		
 	
 }
-==> Cylinder(petlength, (petdiameter/2)+0.01).(setShader(GREEN)) RL(leafangle) Box(blade_len, width, thickness).(setShader(GREEN))
+==> Cylinder(petlength, (petdiameter/2)).(setShader(GREEN)) RL(leafangle) Box(blade_len, width, thickness).(setShader(GREEN))
 ;
 
 
@@ -215,9 +232,6 @@ protected void init()
 		s.age 		= 0.0;
 	};
 ]
-
-
-
 
 public void run()
 {	
@@ -256,7 +270,14 @@ public void run()
 	// adding/changing attributes to created objetcs
 	a:Apex ::> 
 	{
-		a.age++;		
+		a.age++;
+		a.UpdatePos();
+	}
+	
+	n:NodeInt ::> 
+	{
+		n.age++;
+		n.getDiameter();
 	}
 	
 	i:Internode ::> 
@@ -273,13 +294,8 @@ public void run()
 		
 	}
 	
-	l:Leaf, (l.age > 20) ==>> ; 
+	l:Leaf, (l.age > 11) ==>> ; 
 
 ]
-
- 
- 
- 	 
-
 
 }

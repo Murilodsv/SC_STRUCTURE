@@ -14,6 +14,16 @@ abstract module Organ(super.length) extends M(length)
 	}	
 }
 
+module SoilBase{
+	
+	double dimX = 1;
+	double dimY = 1;
+	double Depth_Plant = 0.25;
+	int plantN = 1;
+
+}
+==> RL (90) Translate(0,Depth_Plant,-dimX/2) Parallelogram(dimX,dimY).(setColor(0.51,0.33,0.16))
+;
 
 module Seed extends Null
 {
@@ -31,14 +41,14 @@ module Seed extends Null
 		}
 	}	
 }
-==> Sphere(diameter).(setShader(YELLOW))
+==> Translate(0,0,0) Sphere(diameter).(setShader(YELLOW))
 ;
 
 
 module Roots extends Organ
 {
 	double depth;
-	double radius;	
+	double radius;
 	
 	void initiate(){
 	
@@ -61,7 +71,7 @@ module Roots extends Organ
 	}
 	
 }
-==>  Rotate(180,0,0) Cone(depth,radius).(setShader(WHITE))
+==>  Translate(0,0,0) Rotate(180,0,0) Cone(depth,radius).(setColor(0.3,0.33,0.16))
 ;
 
 module Apex extends Organ
@@ -69,6 +79,7 @@ module Apex extends Organ
 	double diameter;	
 	double plas = 1;
 	double translation;
+	int live_rank;
 	
 	boolean shouldProduce()
 	{
@@ -110,7 +121,8 @@ module Apex extends Organ
 	}
 	
 }
-==> if(order > 0) (Translate(0,-0.005,translation)) Sphere(diameter/2).(setShader(RED))
+//Draw bud only when be 4th live_rank
+==> if(order > 0 && live_rank > 4) (Translate(0,-0.005,translation)) Sphere(diameter/2).(setShader(RED))
 ;
 
 module Internode extends Organ//extends Cylinder.(setShader(YELLOW))
@@ -119,7 +131,11 @@ module Internode extends Organ//extends Cylinder.(setShader(YELLOW))
 	double diam;
 	double am 	= 7;
 	double lm 	= 0.15;
+	double dm	= 0.05;
 	double k	= 1.0;
+	double Height;
+	int live_rank;
+	
 	
 	void initiate(Apex a){
 		
@@ -129,12 +145,21 @@ module Internode extends Organ//extends Cylinder.(setShader(YELLOW))
 		length = 0;
 		diam = a.diameter;
 		
+		
 	}	
 	
 	void Growth(){		
 		
+		diam = (dm) / (1 + Math.exp(-k*(age-am)));
+		
+		// Checks the Height of this internode
+		Height = sum((* i:Internode, (i.rank < rank) *)[length]) + sum((* n:NodeInt, (n.rank < rank) *)[length]);
+		SoilBase sb = selectWhere((*s:SoilBase*), s.plantN == 1);
+		
+		// If this internode reached the soil surface, increase the maximum length
+		if(sb.Depth_Plant > Height) { lm = 0.05;}else{lm = 0.15;}		
 		length = lm / (1 + Math.exp(-k*(age-am)));
-		diam = (lm/3) / (1 + Math.exp(-k*(age-am)));
+		
 	}
 	
 	
@@ -181,19 +206,21 @@ module Leaf extends Organ
 	double petlength;
 	double petdiameter;
 	double leafangle;
+	int live_rank;
+	int MaxLeaves = 10;
 	
 	void initiate(Apex a){
 	
 		age = 0;
 		rank = a.rank;
 		order = a.order;
+		live_rank = 0;
 		thickness = 0.002;
 		length = 0;
 		width = 0;
 		
 		petdiameter = a.diameter + thickness * 2;
-		
-		
+				
 	}
 	
 	void Growth()
@@ -202,17 +229,21 @@ module Leaf extends Organ
 		double k	= 0.5;
 		
 		length = lm / (1 + Math.exp(-k*(age-am)));
-		blade_len = length;
-		
+		blade_len = length;		
 		width = length / w_ratio;
 		
 		Internode it = selectWhere((*i:Internode*), i.rank == rank);		
-		petdiameter = (it.diam) +0.002;		
-		petlength = it.lm  * 1.1;
+		petdiameter = (it.diam) + thickness * 2;
+		
+		SoilBase sb = selectWhere((*s:SoilBase*), s.plantN == 1);
+		//sb.Depth_Plant
+		
+		petlength = sb.Depth_Plant  + it.length;
 		
 		double k_angle	= 1;
 		double am_angle	= 6;
 		double max_angle = 60;
+		if(rank < 4) {am_angle = 2;}
 		leafangle  = max_angle / (1 + Math.exp(-k_angle*(age-am_angle))); 
 		
 	}		
@@ -226,6 +257,7 @@ protected void init()
 [
 	Axiom ==> 	
 	
+	b:SoilBase
 	s:Seed
 	{
 		s.diameter	= 0.005;
@@ -244,8 +276,9 @@ public void run()
 		a.initiate();
 	};
 	
+		
 	// Produce vegetative phytometer
-	a:Apex, (a.shouldProduce() == true && a.order ==0)
+	a:Apex, (a.shouldProduce() && a.order ==0)
 	==>  n:NodeInt [RL(90) b:Apex] [RH(180) l:Leaf] i:Internode RH(180) a
 	{
 		n.initiate(a);
@@ -254,7 +287,7 @@ public void run()
 		i.initiate(a);
 		a.increment();		
 		
-	};
+	};	
 	
 	s:Seed ::>
 	{
@@ -272,6 +305,7 @@ public void run()
 	{
 		a.age++;
 		a.UpdatePos();
+		if(a.order ==1) {a.live_rank++;}
 	}
 	
 	n:NodeInt ::> 
@@ -283,7 +317,8 @@ public void run()
 	i:Internode ::> 
 	{
 		i.age++;		
-		i.Growth();	
+		i.Growth();
+		i.live_rank++;
 		
 	}
 	
@@ -291,10 +326,11 @@ public void run()
 	{
 		l.age++;
 		l.Growth();	
+		l.live_rank++;
 		
 	}
 	
-	l:Leaf, (l.age > 11) ==>> ; 
+	l:Leaf, (l.live_rank > l.MaxLeaves) ==>> ; 
 
 ]
 

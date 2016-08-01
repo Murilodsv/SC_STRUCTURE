@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?><project xmlns="http://grogra.de/registry" graph="graph.xml">
- <import plugin="de.grogra.imp2d" version="1.5"/>
- <import plugin="de.grogra.vecmath" version="1.5"/>
  <import plugin="de.grogra.imp" version="1.5"/>
  <import plugin="de.grogra.math" version="1.5"/>
  <import plugin="de.grogra.rgg" version="1.5"/>
@@ -13,7 +11,7 @@
      <de.grogra.pf.ui.registry.SourceFile mimeType="text/x-grogra-rgg" name="pfs:Model.rgg"/>
     </ref>
     <ref name="meta">
-     <de.grogra.pf.registry.NodeReference name="Model" ref="4203299"/>
+     <de.grogra.pf.registry.NodeReference name="Model" ref="4210753"/>
     </ref>
    </ref>
   </ref>
@@ -27,7 +25,7 @@
         <de.grogra.pf.ui.registry.PanelFactory source="/ui/panels/3d/defaultview">
          <de.grogra.pf.registry.Option name="panelId" type="java.lang.String" value="/ui/panels/3d/defaultview"/>
          <de.grogra.pf.registry.Option name="panelTitle" type="java.lang.String" value="View"/>
-         <de.grogra.pf.registry.Option name="view" type="de.grogra.imp3d.View3D" value="graphDescriptor=[de.grogra.imp.ProjectGraphDescriptor]visibleLayers={true true true true true true true true true true true true true true true true}epsilon=1.0E-6 visualEpsilon=0.01 magnitude=1.0 visibleScales={false false false false false}camera=(minZ=0.1 maxZ=2000.0 projection=[de.grogra.imp3d.PerspectiveProjection aspect=1.0 fieldOfView=1.0471976]transformation=(0.41345052148712513 -0.9105265873559097 0.0 0.1959999988922212 0.09290555445927573 0.04218641220766954 0.9947808123278057 -0.8064249996305801 -0.9057743782159964 -0.4112926456223242 0.10203497157514503 -2.323575822837312 0.0 0.0 0.0 1.0))navigator=null"/>
+         <de.grogra.pf.registry.Option name="view" type="de.grogra.imp3d.View3D" value="graphDescriptor=[de.grogra.imp.ProjectGraphDescriptor]visibleLayers={true true true true true true true true true true true true true true true true}epsilon=1.0E-6 visualEpsilon=0.01 magnitude=1.0 visibleScales={false false false false false}camera=(minZ=0.1 maxZ=2000.0 projection=[de.grogra.imp3d.PerspectiveProjection aspect=1.0 fieldOfView=1.0471976]transformation=(-0.15136091139704544 -0.9884785655243085 0.0 -0.05399999551984119 0.24188317972072812 -0.037038393963276524 0.9695982078885372 -0.40468616888492964 -0.958427045668642 0.14675926843496162 0.24470250358178194 -3.0454430558085193 0.0 0.0 0.0 1.0))navigator=null"/>
         </de.grogra.pf.ui.registry.PanelFactory>
         <de.grogra.pf.ui.registry.Split location="0.109653234">
          <de.grogra.pf.ui.registry.Split orientation="0">
@@ -56,13 +54,6 @@
        </de.grogra.pf.ui.registry.Split>
       </de.grogra.pf.ui.registry.Split>
      </de.grogra.pf.ui.registry.MainWindow>
-     <de.grogra.pf.ui.registry.FloatingWindow height="564" width="662">
-      <de.grogra.pf.ui.registry.PanelFactory source="/ui/panels/2d/graph">
-       <de.grogra.pf.registry.Option name="panelId" type="java.lang.String" value="/ui/panels/2d/graph"/>
-       <de.grogra.pf.registry.Option name="panelTitle" type="java.lang.String" value="Graph"/>
-       <de.grogra.pf.registry.Option name="view" type="de.grogra.imp2d.View2D" value="graphDescriptor=[de.grogra.imp2d.graphs.TopologyGraphDescriptor source=[de.grogra.imp.ProjectGraphDescriptor]]visibleLayers={true true true true true true true true true true true true true true true true}epsilon=1.0E-6 visualEpsilon=0.01 magnitude=1.0 visibleScales={true true true true true true true true true true true true true true true}transformation=(85.7896468036093 -0.0 -5331.256988916181 0.0 -85.7896468036093 -417.1481522039577 -0.0 -0.0 1.0)layout=[de.grogra.imp2d.layout.GeneralPurposeLayout fit=true transformationSteps=1 idealDistance=1.5 yIdealDistance=1.5 maxNbOfSteps=25000 fast=false startAgain=false]"/>
-      </de.grogra.pf.ui.registry.PanelFactory>
-     </de.grogra.pf.ui.registry.FloatingWindow>
     </de.grogra.pf.ui.registry.Layout>
    </ref>
   </ref>
